@@ -1,49 +1,68 @@
 package evaluator.arith;
 
 import evaluator.Evaluator;
+import evaluator.IllegalPostfixExpressionException;
+import language.BinaryOperator;
 import language.Operand;
+import language.Operator;
+import language.arith.UnaryOperator;
 import parser.arith.ArithPostfixParser;
+import stack.LinkedStack;
 import stack.StackInterface;
+import stack.StackUnderflowException;
 
 /**
  * An {@link ArithPostfixEvaluator} is a post fix evaluator
  * over simple arithmetic expressions.
  */
 public class ArithPostfixEvaluator implements Evaluator<Integer> {
-
     private final StackInterface<Operand<Integer>> stack;
 
-    /**
-     * Constructs an {@link ArithPostfixEvaluator}.
-     */
     public ArithPostfixEvaluator() {
-        //TODO Initialize to your LinkedStack
-        stack = null;
+        stack = new LinkedStack<>();
     }
 
-    /**
-     * Evaluates a postfix expression.
-     * @return the result
-     */
     @Override
     public Integer evaluate(String expr) {
-        // TODO Use all the things built so far to create
-        //   the algorithm for postfix evaluation
         ArithPostfixParser parser = new ArithPostfixParser(expr);
+
         while (parser.hasNext()) {
             switch (parser.nextType()) {
                 case OPERAND:
-                    //TODO What do we do when we see an operand?
+                    Operand<Integer> operand = parser.nextOperand();
+                    stack.push(operand);
                     break;
+
                 case OPERATOR:
-                    //TODO What do we do when we see an operator?
+                    Operator<Integer> operator = parser.nextOperator();
+                    try {
+                        if (operator instanceof UnaryOperator) {
+                            Operand<Integer> op = stack.pop();
+                            operator.setOperand(0, op);
+                        } else if (operator instanceof BinaryOperator) {
+                            Operand<Integer> op2 = stack.pop();
+                            Operand<Integer> op1 = stack.pop();
+                            operator.setOperand(1, op2);
+                            operator.setOperand(0, op1);
+                        }
+                        stack.push(operator.performOperation());
+                    } catch (StackUnderflowException e) {
+                        throw new IllegalPostfixExpressionException("Not enough operands");
+                    }
                     break;
+
                 default:
-                    //TODO If we get here, something went very wrong
+                    throw new IllegalStateException("Invalid parser state");
             }
         }
 
-        //TODO What do we return?
-        return null;
+        try {
+            if (stack.size() != 1) {
+                throw new IllegalPostfixExpressionException("Too many operands");
+            }
+            return stack.pop().getValue();
+        } catch (StackUnderflowException e) {
+            throw new IllegalPostfixExpressionException("Empty expression");
+        }
     }
 }

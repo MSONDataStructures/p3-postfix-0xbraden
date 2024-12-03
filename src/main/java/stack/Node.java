@@ -4,7 +4,7 @@ package stack;
  * A {@link Node} is an element of a stack that is implemented
  * using a Linked List structure to allow for unbounded size.
  */
-class Node<T>
+public class Node<T>
 {
     // TONOTDO: please do not edit this class
     // ...well, you can change the variable names if you like
